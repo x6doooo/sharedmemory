@@ -1,7 +1,7 @@
 /**
 * @project SharedMemory
 * @author Dx.Yang <x6doooo@gmail.com>
-* @version 0.0.2
+* @version 0.0.3
 * @license See LICENSE-MIT file included in this distribution.
 */
 
