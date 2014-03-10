@@ -1,9 +1,13 @@
-# SharedMemory
+SharedMemory
+===
 通过IPC实现Cluster共享内存
 
 [![NPM](https://nodei.co/npm/sharedmemory.png)](https://nodei.co/npm/sharedmemory/)
 
-## Super simple to use
+### Installation
+	npm install sharememory
+
+### Usage
 
 ```javascript
 var cluster = require('cluster')
@@ -11,9 +15,9 @@ var initSharedMemory = require('./sharedmemory').init;
 
 // 创建共享内存的控制器
 // 在master进程中，控制器负责维护共享内存
-// 在worker进程中，控制器负责和master的控制器通信，实现读写功能
+// 在worker进程中，控制器负责和master的控制器通信，通过IPC消息对共享内存进行读写操作
 var sharedMemoryController = initSharedMemory();
-//node --trace_gc --trace_gc_verbose --expose-gc test.js
+
 if (cluster.isMaster) {
 
     // fork第一个worker
