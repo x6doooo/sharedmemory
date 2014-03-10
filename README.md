@@ -1,4 +1,5 @@
-# SharedMemory -- Cluster Shared Memory
+# SharedMemory
+通过IPC实现Cluster共享内存
 
 [![NPM](https://nodei.co/npm/sharedmemory.png)](https://nodei.co/npm/sharedmemory/)
 
@@ -12,7 +13,7 @@ var initSharedMemory = require('./sharedmemory').init;
 // 在master进程中，控制器负责维护共享内存
 // 在worker进程中，控制器负责和master的控制器通信，实现读写功能
 var sharedMemoryController = initSharedMemory();
-
+//node --trace_gc --trace_gc_verbose --expose-gc test.js
 if (cluster.isMaster) {
 
     // fork第一个worker
@@ -38,6 +39,5 @@ if (cluster.isMaster) {
     }
     
 }
-
 ```
 
