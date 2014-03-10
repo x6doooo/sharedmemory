@@ -5,7 +5,7 @@ SharedMemory
 [![NPM](https://nodei.co/npm/sharedmemory.png)](https://nodei.co/npm/sharedmemory/)
 
 ### Installation
-	npm install sharememory
+	npm install sharedmemory
 
 ### Usage
 
