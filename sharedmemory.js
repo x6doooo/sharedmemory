@@ -1,7 +1,7 @@
 /**
 * @project SharedMemory
 * @author Dx.Yang <x6doooo@gmail.com>
-* @version 0.0.3
+* @version 0.0.4
 * @license See LICENSE-MIT file included in this distribution.
 */
 
@@ -11,21 +11,48 @@
 var cluster = require('cluster');
 
 var errDesc = {
-    '1': '[ERROR] sharedMemory.init(config) => config.manager is wrong type!'
+    '1': '[ERROR] sharedMemory.init(config) =>  Wrong type config.manager!',
+    '2': '[ERROR] User#set() => Wrong type argument!'
+};
+
+var cacheInitialize = function(cfg) {
+
+    // 无配置
+    if (!cfg) {
+        return {
+            set: function(key, value) {
+                this.memory[key] = value;
+            },
+            get: function(key) {
+                return this.memory[key];
+            },
+            memory: {}
+        };   
+    }
+
+    // 过期淘汰
+    if (cfg.type == 'expire') {
+        return require('./lib/simple-expire').init({
+            update: true,
+            expire: cfg.time
+        });
+    }
+
 };
 
 /**
 * @class Manager
 * @classdesc 直接控制共享内存的类
 * @constructor
+* @param {object} [cacheConfig] - 内存淘汰策略配置
 * @return A new instance of Manager
 */
-var Manager = function() {
+var Manager = function(cacheConfig) {
 
     var self = this;
     
     // 初始化共享内存
-    self.__sharedMemory__ = {};
+    self.__sharedMemory__ = cacheInitialize(cacheConfig);
 
     if(cluster.isMaster) {
         
@@ -33,7 +60,7 @@ var Manager = function() {
         cluster.on('online', function(worker) {
             worker.on('message', function(data) {
                 if (!data.isSharedMemoryMessage) return;
-                self.handle(data);
+                self.handle(data, worker);
                 return false;
             });
         });
@@ -43,7 +70,7 @@ var Manager = function() {
         // manager是clusterWorker时，监听并处理来自clusterMaster转发的请求
         process.on('message', function(data) {
             if (!data.isSharedMemoryMessage) return;
-            self.handle(data);
+            self.handle(data, process);
         });
 
     }
@@ -55,25 +82,18 @@ var Manager = function() {
 * @instance
 * @memberOf Manager
 * @param {object} data
+* @param {process} target - 回信对象
 */
-Manager.prototype.handle = function(data) {
+Manager.prototype.handle = function(data, target) {
     var self = this;
     var value = this[data.method](data);
-
     var msg = {
         isSharedMemoryMessage: true,
         id: data.id,
         uuid: data.uuid,
         value: value
     };
-
-    if(cluster.isMaster) {
-        cluster.workers[data.id].send(msg);
-        return;
-    }
-
-    process.send(msg);
-
+    target.send(msg);
 };
 
 /**
@@ -85,7 +105,22 @@ Manager.prototype.handle = function(data) {
 * @returns {string} 'OK'
 */
 Manager.prototype.set = function(data) {
-    this.__sharedMemory__[data.key] = data.value;
+
+    var sm = this.__sharedMemory__;
+
+    if (data.key) {
+        sm.set(data.key, data.value);
+        return 'OK';
+    }
+
+    var o = data.value;
+    if (Object.prototype.toString.call(o) !== '[object Object]') {
+        return errDesc[2];
+    }
+
+    for (var k in o) {
+        sm.set(k, o[k]);
+    }
     return 'OK';
 };
 
@@ -98,7 +133,7 @@ Manager.prototype.set = function(data) {
 * @returns {*}
 */
 Manager.prototype.get = function(data) {
-    return this.__sharedMemory__[data.key];
+    return this.__sharedMemory__.get(data.key);
 };
 
 /**
@@ -154,16 +189,19 @@ User.prototype.uuid = function() {
 * @method set
 * @instance
 * @memberOf User
-* @param {string} key - 键
-* @param {*} value - 值（不建议使用function类型）
-* @param {User~setCallback} cb - 回调函数
+* @param {arguments} - (key, value, cb) or (object, cb)
 */
-/**
-* @callback User~setCallback
-* @param {string} data - 'OK'表示成功
-*/
-User.prototype.set = function(key, value, cb) {
-    this.handle('set', key, value, cb);
+User.prototype.set = function() {
+    if (!arguments.length) return;
+
+    // object [& cb]
+    if (arguments.length == 1 || (arguments.length == 2 && typeof arguments[1] == 'function')) {
+        this.handle('set', undefined, arguments[0], arguments[1]);
+        return;
+    }
+
+    // key & value [& cb]
+    this.handle('set', arguments[0], arguments[1], arguments[2]);
 };
 
 /**
@@ -172,11 +210,7 @@ User.prototype.set = function(key, value, cb) {
 * @instance
 * @memberOf User
 * @param {string} key - 键
-* @param {User~getCallback} cb - 回调函数
-*/
-/**
-* @callback User~getCallback
-* @param {*} data - key对应的数据
+* @param {function(data)} [cb] - 回调函数，第一个参数是返回的数据
 */
 User.prototype.get = function(key, cb) {
     this.handle('get', key, null, cb);
@@ -188,11 +222,7 @@ User.prototype.get = function(key, cb) {
 * @instance
 * @memberOf User
 * @param {string} key - 键
-* @param {User~removeCallback} cb - 回调函数
-*/
-/**
-* @callback User~removeCallback
-* @param {string} data - 'OK'表示成功
+* @param {function(data)} [cb] - 回调函数
 */
 User.prototype.remove = function(key, cb) {
     this.set(key, undefined, cb);
@@ -205,13 +235,9 @@ User.prototype.remove = function(key, cb) {
 * @private
 * @memberOf User
 * @param {string} [method=set|get]
-* @param {string} key
+* @param {string|undefined} key
 * @param {*} value
-* @param {User~handleCallback} cb - 回调函数
-*/
-/**
-* @callback User~handleCallback
-* @param {string} data
+* @param {function(data)} [cb] - 回调函数
 */
 User.prototype.handle = function(method, key, value, cb) {
 
@@ -259,19 +285,16 @@ var Transfer = function(whoIsManager) {
 * @param {object} [config]
 * @param {number} [config.manager] - 如果需要用work进程做共享内存的manager，指定其worker.id即可
 * @returns {instance} Manager | User | Transfer 的实例
-* @example
-* 
 */
 function init(config) {
 
     config = config || {};
 
-    var defaultConfig = {
-        expire: 30 * 60 * 1000
-    };
-
     // undefined => master | cluster_id => cluster
-    var whoIsManager = config.manager || defaultConfig.manager;
+    var whoIsManager = config.manager;
+
+    // 淘汰策略
+    var cacheConfig = config.cache;
 
     // Manager(cluster worker) <--> Transfer(cluster master) <--> User、User、User...(cluster worker)
     if (whoIsManager) {
@@ -286,7 +309,7 @@ function init(config) {
         }
         
         if(cluster.worker.id === whoIsManager) {
-            return new Manager;
+            return new Manager(cacheConfig);
         }
         
         return new User;
@@ -295,7 +318,7 @@ function init(config) {
 
         // Manager(cluster master) <--> User(cluster worker)    
         if (cluster.isMaster) {
-            return new Manager();
+            return new Manager(cacheConfig);
         }
 
         return new User;
