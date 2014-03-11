@@ -1,0 +1,33 @@
+{
+  "name": "sharedmemory",
+  "description": "Cluster Shared Memory",
+  "keywords": [
+    "memory",
+    "shared",
+    "cluster",
+    "util",
+    "utility"
+  ],
+  "version": "0.0.5",
+  "author": "Dx.Yang<x6doooo@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/x6doooo/sharedmemory.git"
+  },
+  "bugs": {
+    "url": "http://github.com/x6doooo/sharedmemoryissues"
+  },
+  "license": [
+    {
+      "type" : "MIT",
+      "url" : "https://github.com/x6doooo/sharedmemory/raw/master/LICENSE-MIT"
+    }
+  ],
+  "engines": [
+    "node >= 0.8.0"
+  ],
+  "main": "./sharedmemory.js",
+  "dependencies": {
+    "cluster": "*"
+  }
+}
