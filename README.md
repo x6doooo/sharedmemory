@@ -45,3 +45,63 @@ if (cluster.isMaster) {
 }
 ```
 
+### Example
+
+
+```
+    // express session
+
+    // admin路径下的页面是后台页面，需要验证登录才能访问
+    app.all('/admin/:route', function(req, res, next) {
+
+        if (req.cookie.sessionKey) {
+
+            // 如果cookie里有sessionKey，则用sessionKey取sessionValue，看是否处于登录状态
+            sharedMemoryController.get(req.cookie.sessionKey, function(sessionValue) {
+                if (sessionValue == 'hasLogin') {
+                    // 已登录则进行下一步
+                    next();
+                } else {
+                    // 未登录状态跳转到登录页
+                    
+                }
+            });
+
+        } else {
+
+            // 没有sessionKey也跳转到登录页面
+            req.redirect('/login');
+
+        }
+
+    });
+
+    // 登录验证接口
+    app.post('/api/checkLogin', function(req, res) {
+        var user = req.query.user;
+        var password = req.query.password
+
+        // 首次登录用mysql验证
+        connection.query('SELECT password FROM users WHERE user = "' + user + '"', function(err, rows) {
+
+            if (rows.length && rows[0].password == password) {
+
+                // 通过验证后，在客户端的cookie里记一个sessionKey，并在共享内存里记一个对应的sessionValue。
+                // 下次访问先从session里做验证，效率比mysql高
+                res.cookie('sessionKey', user);
+                sharedMemoryController.set(user, 'hasLogin');
+
+                //返回成功
+                res.send('success');
+
+            } else {
+
+                //返回失败
+                res.send('failed')
+            }
+
+        });
+    });
+
+```
+
