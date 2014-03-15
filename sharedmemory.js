@@ -38,6 +38,11 @@ var cacheInitialize = function(cfg) {
 		});
 	}
 
+	// LRU
+	if (cfg.type == 'LRU') {
+		return require('./lib/lru').init(cfg.max);
+	}
+
 };
 
 /**
