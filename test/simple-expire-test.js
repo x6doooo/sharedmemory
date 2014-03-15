@@ -4,12 +4,13 @@ var numCPUs = require('os').cpus().length;
 
 var cfg = {
     cache: {
-        type: 'expire',
-        time: 20000
+        //type: 'expire',
+        //time: 20000
+        type: 'LRU',
+        max: 10000
     }
 };
 
-//var sharedMemoryController = initSharedMemory(cfg);
 var sharedMemoryController = initSharedMemory(cfg);
 
 var watch = function(name, func, count) {
@@ -29,8 +30,6 @@ var watch = function(name, func, count) {
 
     console.log('---------------------------');
     console.log('|* ' + name + ' *| total cost: ' + time + ' ms, ' + avgTime + ' ops |');
-
-
 };
 
 if (cluster.isMaster) {
@@ -44,6 +43,6 @@ if (cluster.isMaster) {
 
     watch('set', function(i) {
         sharedMemoryController.set(cluster.worker.id + '-' + i, i);
-    }, 10 * 10000); 
+    }, 1 * 10000); 
 
 }
