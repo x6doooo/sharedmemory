@@ -4,10 +4,10 @@ var numCPUs = require('os').cpus().length;
 
 var cfg = {
     cache: {
-        //type: 'expire',
-        //time: 20000
-        type: 'LRU',
-        max: 10000
+        type: 'expire',
+        time: 20000
+        //type: 'LRU',
+        //max: 10000
     }
 };
 
@@ -43,6 +43,6 @@ if (cluster.isMaster) {
 
     watch('set', function(i) {
         sharedMemoryController.set(cluster.worker.id + '-' + i, i);
-    }, 1 * 10000); 
-
+    }, 10 * 10000); 
+    
 }
