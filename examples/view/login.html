@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title> title </title>
+		<meta name="description" content="XXX" />
+		<meta name="keywords" content="k1,k2" />
+		<meta name="author" content="Tim Yang" />
+		<script type="text/javascript" src="/public/jquery-1.8.2.min.js"></script>
+	</head>
+	<body>
+
+    <form id="login-form">
+      
+      <label>
+        username: 
+        <input type="text" id="user" value="xiaoming" />
+      </label>
+      <br />
+      <label>
+        password: 
+        <input type="password" id="password" value="3b50a543d5cc7a29e7d5a4db495622ee" />
+      </label>
+
+      <br />
+
+      <input type="submit" id="submit-btn" />
+    
+    </form>
+
+    <script>
+
+      $(function() {
+        
+        $('#login-form').submit(function() {
+          
+          var user = $('#user').val();
+
+          var password = $('#password').val();
+
+          console.log(user, password);
+          $.ajax({
+            url: '/api/checkLogin',
+            type: 'POST',
+            data: {
+              user: user,
+              password: password
+            }
+          }).done(function(data) {
+            
+            if (data == 'ok') {
+              location.href = '/admin/test';
+            }
+
+            if (data == 'failed') {
+              alert('failed')
+            }
+
+          }).fail(function(err) {
+            alert('failed')
+          });
+
+          return false;
+        
+        });
+      
+      });
+    
+    </script>
+
+	</body>
+</html>
+
