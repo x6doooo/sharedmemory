@@ -12,7 +12,8 @@ var cluster = require('cluster');
 
 var errDesc = {
 	'1': '[ERROR] sharedMemory.init(config) =>  Wrong type config.manager!',
-	'2': '[ERROR] User#set() => Wrong type argument!'
+	'2': '[ERROR] User#set() => Wrong type argument!',
+	'3': '[ERROR] sharedMemory.init(config) => Wrong config!'
 };
 
 var cacheInitialize = function(cfg) {
@@ -42,6 +43,8 @@ var cacheInitialize = function(cfg) {
 	if (cfg.type == 'LRU') {
 		return require('./lib/lru').init(cfg.max);
 	}
+
+	throw new Error(errDesc[3]);
 
 };
 
