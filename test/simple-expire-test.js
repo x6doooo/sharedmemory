@@ -28,8 +28,7 @@ var watch = function(name, func, count) {
 
     var avgTime = (count / time * 1000).toFixed(2);
 
-    console.log('---------------------------');
-    console.log('|* ' + name + ' *| total cost: ' + time + ' ms, ' + avgTime + ' ops |');
+    console.log(name + ' => 耗时: ' + time + ' ms | ' + avgTime + ' o/s');
 };
 
 if (cluster.isMaster) {
@@ -41,8 +40,18 @@ if (cluster.isMaster) {
 
 } else {
 
-    watch('set', function(i) {
-        sharedMemoryController.set(cluster.worker.id + '-' + i, i);
-    }, 10 * 10000); 
+    var max = 100 * 1000;
     
+    watch('set', function(i) {
+      sharedMemoryController.set(cluster.worker.id + '-' + i, i);
+    }, max); 
+
+    for(var i = 0; i < max; i++) {
+      sharedMemoryController.set(i, i);
+    }
+
+    watch('get', function(i) {
+      sharedMemoryController.get(i);
+    }, max);
+
 }
