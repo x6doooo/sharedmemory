@@ -45,63 +45,37 @@ if (cluster.isMaster) {
 }
 ```
 
-### Example
+### Configure
 
+1. 无参数
 
+```javascript
+require('./sharedmemory').init();
 ```
-    // express session
 
-    // admin路径下的页面是后台页面，需要验证登录才能访问
-    app.all('/admin/:route', function(req, res, next) {
+默认情况会直接在主进程里创建共享内存，并且没有缓存控制策略
 
-        if (req.cookie.sessionKey) {
+2. 过期淘汰
 
-            // 如果cookie里有sessionKey，则用sessionKey取sessionValue，看是否处于登录状态
-            sharedMemoryController.get(req.cookie.sessionKey, function(sessionValue) {
-                if (sessionValue == 'hasLogin') {
-                    // 已登录则进行下一步
-                    next();
-                } else {
-                    // 未登录状态跳转到登录页
-                    
-                }
-            });
-
-        } else {
-
-            // 没有sessionKey也跳转到登录页面
-            req.redirect('/login');
-
-        }
-
-    });
-
-    // 登录验证接口
-    app.post('/api/checkLogin', function(req, res) {
-        var user = req.query.user;
-        var password = req.query.password
-
-        // 首次登录用mysql验证
-        connection.query('SELECT password FROM users WHERE user = "' + user + '"', function(err, rows) {
-
-            if (rows.length && rows[0].password == password) {
-
-                // 通过验证后，在客户端的cookie里记一个sessionKey，并在共享内存里记一个对应的sessionValue。
-                // 下次访问先从session里做验证，效率比mysql高
-                res.cookie('sessionKey', user);
-                sharedMemoryController.set(user, 'hasLogin');
-
-                //返回成功
-                res.send('success');
-
-            } else {
-
-                //返回失败
-                res.send('failed')
-            }
-
-        });
-    });
-
+```javascript
+require('./sharedmemory').init({
+    cache: {
+        type: 'expire', //类型
+        expire: 60 * 60 * 1000    //一小时过期。不指定则采用默认的30分钟过期
+    }
+});
 ```
+
+3. LRU
+
+```javascript
+require('./sharedmemory').init({
+    cache: {
+        type: 'LRU', //类型
+        max: 20000    //最多20000条记录。不指定则采用默认的10000条
+    }
+});
+```
+
+超过记录数，最长时间未被访问的记录会被删除。
 
