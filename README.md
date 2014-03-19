@@ -47,7 +47,7 @@ if (cluster.isMaster) {
 
 ### Configure
 
-1. 无参数
+1、 无参数
 
 ```javascript
 require('./sharedmemory').init();
@@ -55,7 +55,7 @@ require('./sharedmemory').init();
 
 默认情况会直接在主进程里创建共享内存，并且没有缓存控制策略
 
-2. 过期淘汰
+2、 过期淘汰
 
 ```javascript
 require('./sharedmemory').init({
@@ -66,7 +66,7 @@ require('./sharedmemory').init({
 });
 ```
 
-3. LRU
+3、 LRU
 
 ```javascript
 require('./sharedmemory').init({
