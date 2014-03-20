@@ -11,40 +11,40 @@
 var cluster = require('cluster');
 
 var errDesc = {
-	'1': '[ERROR] sharedMemory.init(config) =>  Wrong type config.manager!',
-	'2': '[ERROR] User#set() => Wrong type argument!',
-	'3': '[ERROR] sharedMemory.init(config) => Wrong config!'
+  '1': '[ERROR] sharedMemory.init(config) =>  Wrong type config.manager!',
+  '2': '[ERROR] User#set() => Wrong type argument!',
+  '3': '[ERROR] sharedMemory.init(config) => Wrong config!'
 };
 
 var cacheInitialize = function(cfg) {
 
-	// 无配置
-	if (!cfg) {
-		return {
-			set: function(key, value) {
-				this.memory[key] = value;
-			},
-			get: function(key) {
-				return this.memory[key];
-			},
-			memory: {}
-		};
-	}
+  // 无配置
+  if (!cfg) {
+    return {
+      set: function(key, value) {
+        this.memory[key] = value;
+      },
+      get: function(key) {
+        return this.memory[key];
+      },
+      memory: {}
+    };
+  }
 
-	// 过期淘汰
-	if (cfg.type == 'expire') {
-		return require('./lib/simple-expire').init({
-			update: true,
-			expire: cfg.time
-		});
-	}
+  // 过期淘汰
+  if (cfg.type == 'expire') {
+    return require('./lib/simple-expire').init({
+      update: true,
+      expire: cfg.time
+    });
+  }
 
-	// LRU
-	if (cfg.type == 'LRU') {
-		return require('./lib/lru').init(cfg.max);
-	}
+  // LRU
+  if (cfg.type == 'LRU') {
+    return require('./lib/lru').init(cfg.max);
+  }
 
-	throw new Error(errDesc[3]);
+  throw new Error(errDesc[3]);
 
 };
 
@@ -57,31 +57,31 @@ var cacheInitialize = function(cfg) {
 */
 var Manager = function(cacheConfig) {
 
-	var self = this;
+  var self = this;
 
-	// 初始化共享内存
-	self.__sharedMemory__ = cacheInitialize(cacheConfig);
+  // 初始化共享内存
+  self.__sharedMemory__ = cacheInitialize(cacheConfig);
 
-	if (cluster.isMaster) {
+  if (cluster.isMaster) {
 
-		// manager是clusterMaster时，监听并处理来自worker的请求
-		cluster.on('online', function(worker) {
-			worker.on('message', function(data) {
-				if (!data.isSharedMemoryMessage) return;
-				self.handle(data, worker);
-				return false;
-			});
-		});
+    // manager是clusterMaster时，监听并处理来自worker的请求
+    cluster.on('online', function(worker) {
+      worker.on('message', function(data) {
+        if (!data.isSharedMemoryMessage) return;
+        self.handle(data, worker);
+        return false;
+      });
+    });
 
-	} else {
+  } else {
 
-		// manager是clusterWorker时，监听并处理来自clusterMaster转发的请求
-		process.on('message', function(data) {
-			if (!data.isSharedMemoryMessage) return;
-			self.handle(data, process);
-		});
+    // manager是clusterWorker时，监听并处理来自clusterMaster转发的请求
+    process.on('message', function(data) {
+      if (!data.isSharedMemoryMessage) return;
+      self.handle(data, process);
+    });
 
-	}
+  }
 };
 
 /**
@@ -93,15 +93,15 @@ var Manager = function(cacheConfig) {
 * @param {process} target - 回信对象
 */
 Manager.prototype.handle = function(data, target) {
-	var self = this;
-	var value = this[data.method](data);
-	var msg = {
-		isSharedMemoryMessage: true,
-		id: data.id,
-		uuid: data.uuid,
-		value: value
-	};
-	target.send(msg);
+  var self = this;
+  var value = this[data.method](data);
+  var msg = {
+    isSharedMemoryMessage: true,
+    id: data.id,
+    uuid: data.uuid,
+    value: value
+  };
+  target.send(msg);
 };
 
 /**
@@ -114,22 +114,22 @@ Manager.prototype.handle = function(data, target) {
 */
 Manager.prototype.set = function(data) {
 
-	var sm = this.__sharedMemory__;
+  var sm = this.__sharedMemory__;
 
-	if (data.key) {
-		sm.set(data.key, data.value);
-		return 'OK';
-	}
+  if (data.key) {
+    sm.set(data.key, data.value);
+    return 'OK';
+  }
 
-	var o = data.value;
-	if (Object.prototype.toString.call(o) !== '[object Object]') {
-		return errDesc[2];
-	}
+  var o = data.value;
+  if (Object.prototype.toString.call(o) !== '[object Object]') {
+    return errDesc[2];
+  }
 
-	for (var k in o) {
-		sm.set(k, o[k]);
-	}
-	return 'OK';
+  for (var k in o) {
+    sm.set(k, o[k]);
+  }
+  return 'OK';
 };
 
 /**
@@ -141,7 +141,7 @@ Manager.prototype.set = function(data) {
 * @returns {*}
 */
 Manager.prototype.get = function(data) {
-	return this.__sharedMemory__.get(data.key);
+  return this.__sharedMemory__.get(data.key);
 };
 
 /**
@@ -152,30 +152,30 @@ Manager.prototype.get = function(data) {
 */
 var User = function() {
 
-	var self = this;
-	self.__uuid__ = 0;
+  var self = this;
+  self.__uuid__ = 0;
 
-	/** 
+  /** 
     * 缓存读写操作的回调函数
     * @member {Object} __getCallbacks__
     * @private
     * @instance
     * @memberOf User
     */
-	self.__getCallbacks__ = {};
+  self.__getCallbacks__ = {};
 
-	// 监听读写之后的回信
-	process.on('message', function(data) {
+  // 监听读写之后的回信
+  process.on('message', function(data) {
 
-		// sharememory的通信标记
-		if (!data.isSharedMemoryMessage) return;
-		var cb = self.__getCallbacks__[data.uuid];
-		if (cb && typeof cb == 'function') {
-			cb(data.value)
-		}
-		self.__getCallbacks__[data.uuid] = undefined;
+    // sharememory的通信标记
+    if (!data.isSharedMemoryMessage) return;
+    var cb = self.__getCallbacks__[data.uuid];
+    if (cb && typeof cb == 'function') {
+      cb(data.value)
+    }
+    self.__getCallbacks__[data.uuid] = undefined;
 
-	});
+  });
 
 };
 
@@ -188,8 +188,8 @@ var User = function() {
 * @returns {number}
 */
 User.prototype.uuid = function() {
-	var i = this.__uuid__;
-	return this.__uuid__ = i = i > 65535 ? 0: i + 1;
+  var i = this.__uuid__;
+  return this.__uuid__ = i = i > 65535 ? 0: i + 1;
 };
 
 /**
@@ -200,16 +200,16 @@ User.prototype.uuid = function() {
 * @param {arguments} - (key, value, cb) or (object, cb)
 */
 User.prototype.set = function() {
-	if (!arguments.length) return;
+  if (!arguments.length) return;
 
-	// object [& cb]
-	if (arguments.length == 1 || (arguments.length == 2 && typeof arguments[1] == 'function')) {
-		this.handle('set', undefined, arguments[0], arguments[1]);
-		return;
-	}
+  // object [& cb]
+  if (arguments.length == 1 || (arguments.length == 2 && typeof arguments[1] == 'function')) {
+    this.handle('set', undefined, arguments[0], arguments[1]);
+    return;
+  }
 
-	// key & value [& cb]
-	this.handle('set', arguments[0], arguments[1], arguments[2]);
+  // key & value [& cb]
+  this.handle('set', arguments[0], arguments[1], arguments[2]);
 };
 
 /**
@@ -221,7 +221,7 @@ User.prototype.set = function() {
 * @param {function(data)} [cb] - 回调函数，第一个参数是返回的数据
 */
 User.prototype.get = function(key, cb) {
-	this.handle('get', key, null, cb);
+  this.handle('get', key, null, cb);
 };
 
 /**
@@ -233,7 +233,7 @@ User.prototype.get = function(key, cb) {
 * @param {function(data)} [cb] - 回调函数
 */
 User.prototype.remove = function(key, cb) {
-	this.set(key, undefined, cb);
+  this.set(key, undefined, cb);
 };
 
 /**
@@ -249,19 +249,19 @@ User.prototype.remove = function(key, cb) {
 */
 User.prototype.handle = function(method, key, value, cb) {
 
-	var self = this;
-	var uuid = self.uuid();
+  var self = this;
+  var uuid = self.uuid();
 
-	process.send({
-		isSharedMemoryMessage: true,
-		method: method,
-		id: cluster.worker.id,
-		uuid: uuid,
-		key: key,
-		value: value
-	});
+  process.send({
+    isSharedMemoryMessage: true,
+    method: method,
+    id: cluster.worker.id,
+    uuid: uuid,
+    key: key,
+    value: value
+  });
 
-	self.__getCallbacks__[uuid] = cb;
+  self.__getCallbacks__[uuid] = cb;
 
 };
 
@@ -273,18 +273,18 @@ User.prototype.handle = function(method, key, value, cb) {
 * @return A new instance of Transfer
 */
 var Transfer = function(whoIsManager) {
-	cluster.on('online', function(worker) {
-		worker.on('message', function(data) {
-			if (!data.isSharedMemoryMessage) return;
-			if (worker.id === whoIsManager) {
-				// 转发给user
-				cluster.workers[data.id].send(data);
-				return;
-			}
-			// 转发给manager
-			cluster.workers[whoIsManager].send(data);
-		});
-	});
+  cluster.on('online', function(worker) {
+    worker.on('message', function(data) {
+      if (!data.isSharedMemoryMessage) return;
+      if (worker.id === whoIsManager) {
+        // 转发给user
+        cluster.workers[data.id].send(data);
+        return;
+      }
+      // 转发给manager
+      cluster.workers[whoIsManager].send(data);
+    });
+  });
 };
 
 /**
@@ -296,42 +296,42 @@ var Transfer = function(whoIsManager) {
 */
 function init(config) {
 
-	config = config || {};
+  config = config || {};
 
-	// undefined => master | cluster_id => cluster
-	var whoIsManager = config.manager;
+  // undefined => master | cluster_id => cluster
+  var whoIsManager = config.manager;
 
-	// 淘汰策略
-	var cacheConfig = config.cache;
+  // 淘汰策略
+  var cacheConfig = config.cache;
 
-	// Manager(cluster worker) <--> Transfer(cluster master) <--> User、User、User...(cluster worker)
-	if (whoIsManager) {
+  // Manager(cluster worker) <--> Transfer(cluster master) <--> User、User、User...(cluster worker)
+  if (whoIsManager) {
 
-		if (typeof whoIsManager !== 'number') {
-			throw new Error(errDesc[1]);
-			return;
-		}
+    if (typeof whoIsManager !== 'number') {
+      throw new Error(errDesc[1]);
+      return;
+    }
 
-		if (cluster.isMaster) {
-			return new Transfer(whoIsManager);
-		}
+    if (cluster.isMaster) {
+      return new Transfer(whoIsManager);
+    }
 
-		if (cluster.worker.id === whoIsManager) {
-			return new Manager(cacheConfig);
-		}
+    if (cluster.worker.id === whoIsManager) {
+      return new Manager(cacheConfig);
+    }
 
-		return new User;
+    return new User;
 
-	} else {
+  } else {
 
-		// Manager(cluster master) <--> User(cluster worker)    
-		if (cluster.isMaster) {
-			return new Manager(cacheConfig);
-		}
+    // Manager(cluster master) <--> User(cluster worker)    
+    if (cluster.isMaster) {
+      return new Manager(cacheConfig);
+    }
 
-		return new User;
+    return new User;
 
-	}
+  }
 
 }
 

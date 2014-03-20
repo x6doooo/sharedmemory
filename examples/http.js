@@ -5,7 +5,6 @@ var numCPUs = require('os').cpus().length;
 
 var express = require('express');
 
-
 // 初始化共享内存控制器
 var sharedMemoryController = initSharedMemory({
 
@@ -20,7 +19,7 @@ var sharedMemoryController = initSharedMemory({
 if (cluster.isMaster) {
 
   // 根据CPU数fork子进程
-  for(var i = 0; i < numCPUs; i++) {
+  for (var i = 0; i < numCPUs; i++) {
     cluster.fork();
   }
 
@@ -55,18 +54,18 @@ if (cluster.isMaster) {
   });
 
   // 如果访问/admin路径下的页面，需要先验证权限
-	app.all('/admin/:route', function(req, res, next) {
+  app.all('/admin/:route', function(req, res, next) {
 
     // cookie里有sessionKey
-		if (req.cookies.sessionKey) {
+    if (req.cookies.sessionKey) {
 
       // 根据sessionKey，从共享内存中取sessionValue
-			sharedMemoryController.get(req.cookies.sessionKey, function(sessionValue) {
+      sharedMemoryController.get(req.cookies.sessionKey, function(sessionValue) {
 
-				if (sessionValue) {
+        if (sessionValue) {
 
           // sessionValue为真，表明具有权限，继续正常访问
-					next();
+          next();
 
         } else {
 
@@ -75,7 +74,7 @@ if (cluster.isMaster) {
 
         }
 
-			});
+      });
 
     } else {
 
@@ -84,7 +83,7 @@ if (cluster.isMaster) {
 
     }
 
-	});
+  });
 
   // 验证权限后，正常访问/admin路径下的页面
   app.all('/admin/:route', function(req, res) {
@@ -92,9 +91,9 @@ if (cluster.isMaster) {
   });
 
   // 登录页
-	app.get('/login', function(req, res) {
+  app.get('/login', function(req, res) {
     res.render('login');
-	});
+  });
 
   // 登录验证接口
   app.post('/api/checkLogin', function(req, res) {
@@ -115,12 +114,10 @@ if (cluster.isMaster) {
       return;
     }
     res.send('failed');
-    
+
   });
 
-	app.listen('3000');
+  app.listen('3000');
 
 }
-
-
 
