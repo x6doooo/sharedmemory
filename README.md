@@ -39,6 +39,8 @@ if (cluster.isMaster) {
         // 第二个worker从共享内存读取a的值
         sharedMemoryController.get('a', function(data) {
             console.log(data);  // => [0, 1, 2, 3]
+            // 删除
+            sharedMemoryController.remove('a');
         });
     }
     

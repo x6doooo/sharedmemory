@@ -28,7 +28,8 @@ var watch = function(name, func, count) {
 
   var avgTime = (count / time * 1000).toFixed(2);
 
-  console.log(name + ' => 耗时: ' + time + ' ms | ' + avgTime + ' o/s');
+  console.log(name + ' => ' + count + ' 次 | 总耗时' + time + ' ms | 平均 ' + avgTime + ' o/s');
+
 };
 
 if (cluster.isMaster) {
