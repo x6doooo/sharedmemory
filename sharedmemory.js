@@ -27,6 +27,9 @@ var cacheInitialize = function(cfg) {
       get: function(key) {
         return this.memory[key];
       },
+      clear: function() {
+        this.memory = {};
+      },
       memory: {}
     };
   }
