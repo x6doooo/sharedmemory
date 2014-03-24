@@ -1,4 +1,4 @@
-var initSharedMemory = require('../sharedmemory').init;
+var initSharedMemory = require('../../sharedmemory').init;
 
 var cluster = require('cluster');
 var numCPUs = require('os').cpus().length;

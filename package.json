@@ -26,6 +26,6 @@
   "engines": [
     "node >= 0.8.0"
   ],
-  "main": "./sharedmemory.js",
+  "main": "./index.js",
   "dependencies": {}
 }
