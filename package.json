@@ -8,14 +8,14 @@
     "util",
     "utility"
   ],
-  "version": "0.0.6",
+  "version": "0.0.7",
   "author": "Dx.Yang<x6doooo@gmail.com>",
   "repository": {
     "type": "git",
     "url": "http://github.com/x6doooo/sharedmemory.git"
   },
   "bugs": {
-    "url": "http://github.com/x6doooo/sharedmemoryissues"
+    "url": "http://github.com/x6doooo/sharedmemory/issues"
   },
   "license": [
     {
