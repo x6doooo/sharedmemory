@@ -11,7 +11,8 @@ var cfg = {
     }
 };
 
-var sharedMemoryController = initSharedMemory(cfg);
+//var sharedMemoryController = initSharedMemory(cfg);
+var sharedMemoryController = initSharedMemory();
 
 var watch = function(name, func, count) {
 
@@ -43,19 +44,34 @@ if (cluster.isMaster) {
 
     var max = 100 * 1000;
 
+    var key, value;
     watch('set', function(i) {
-        sharedMemoryController.set(cluster.worker.id + '-' + i, i);
+        key = value = cluster.worker.id + '-' + i;
+        sharedMemoryController.set(key, value);
     },
     max);
 
+/*
     for (var i = 0; i < max; i++) {
-        sharedMemoryController.set(i, i);
+        sharedMemoryController.set(cluster.worker.id + '-' + i, cluster.worker.id + '-' + i);
     }
+*/  
 
+    var err_count = 0;
+    var result_count = 0;
     watch('get', function(i) {
-        sharedMemoryController.get(i);
+        var key = cluster.worker.id + '-' + i;
+        sharedMemoryController.get(key, function(data){
+            if(key != data){
+                console.log(key, data);
+                err_count += 1;
+            }
+            result_count += 1;
+            if (result_count == max) {
+                console.log("get正确率 = " + (result_count - err_count) / result_count * 100 + '%' );
+            }
+        });
     },
     max);
-
 }
 
