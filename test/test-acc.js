@@ -5,6 +5,8 @@ var http = require('http');
 var sharedMemoryController = initSharedMemory();
 
 
+
+
 if (cluster.isMaster) {
 
     for (var i = 0; i < numCPUs; i++) {
@@ -23,7 +25,7 @@ if (cluster.isMaster) {
     http.createServer(function(req,res){
 
         worker_count += 1;
-        
+                
         sharedMemoryController.plusOne('count');
 
         res.end();
